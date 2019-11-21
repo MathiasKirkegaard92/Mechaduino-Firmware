@@ -76,15 +76,15 @@ extern const int sin_1[];
 
 #define ENABLE_PROFILE_IO    // Define to enable profiling I/O pins
 
-#ifdef ENABLE_PROFILE_IO  
-  #define TEST1   3
+#ifdef ENABLE_PROFILE_IO
+#define TEST1   3
 
-  #define TEST1_HIGH() (REG_PORT_OUTSET0 = PORT_PA09)
-  #define TEST1_LOW() (REG_PORT_OUTCLR0 = PORT_PA09)
+#define TEST1_HIGH() (REG_PORT_OUTSET0 = PORT_PA09)
+#define TEST1_LOW() (REG_PORT_OUTCLR0 = PORT_PA09)
 
 #else
-  #define TEST1_HIGH()
-  #define TEST1_LOW() 
+#define TEST1_HIGH()
+#define TEST1_LOW()
 #endif
 
 

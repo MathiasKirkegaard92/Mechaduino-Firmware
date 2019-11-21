@@ -378,7 +378,7 @@ void calibrate() {   /// this is the calibration routine
 
 float read_angle()
 {
-  const int avg = 10;            //average a few readings
+  const int avg = 4;            //average a few readings
   int encoderReading = 0;
 
   disableTCInterrupts();        //can't use readEncoder while in closed loop
@@ -446,7 +446,7 @@ void serialCheck() {        //Monitors serial for commands.  Must be called in r
         break;
 
       case 'r':             //new setpoint
-        SerialUSB.println("Enter setpoint:");
+//        SerialUSB.println("Enter setpoint:");
         while (SerialUSB.available() == 0)  {}
         r = SerialUSB.parseFloat();
         SerialUSB.println(r);
@@ -734,7 +734,7 @@ void setupTCInterrupts() {  // configure the controller interrupt
   TC5->COUNT16.CTRLA.reg |= TC_CTRLA_WAVEGEN_MFRQ; // Set TC as normal Normal Frq
   WAIT_TC16_REGS_SYNC(TC5)
 
-  TC5->COUNT16.CTRLA.reg |= TC_CTRLA_PRESCALER_DIV1;   // Set perscaler
+  TC5->COUNT16.CTRLA.reg |= TC_CTRLA_PRESCALER_DIV1;   // Set prescaler
   WAIT_TC16_REGS_SYNC(TC5)
 
   TC5->COUNT16.CC[0].reg = (int)( round(48000000 / Fs)); //0x3E72; //0x4AF0;
@@ -1097,33 +1097,33 @@ void stepResponse() {     // not done yet...
   SerialUSB.println("--------------------------------");
   SerialUSB.println("");
   SerialUSB.println("Get ready for step response!");
-  SerialUSB.println("Close Serial Monitor and open Tools>>Serial Plotter");
-  SerialUSB.println("You have 10 seconds...");
+//  SerialUSB.println("Close Serial Monitor and open Tools>>Serial Plotter");
+//  SerialUSB.println("You have 10 seconds...");
   enableTCInterrupts();     //start in closed loop mode
   //mode = 'x';
   r = 0;
   delay(1000);
-  SerialUSB.println("9...");
-  delay(1000);
-  SerialUSB.println("8...");
-  delay(1000);
-  SerialUSB.println("7...");
-  delay(1000);
-  SerialUSB.println("6...");
-  delay(1000);
-  SerialUSB.println("5...");
-  delay(1000);
-  SerialUSB.println("4...");
-  delay(1000);
-  SerialUSB.println("3...");
-  delay(1000);
-  SerialUSB.println("2...");
-  delay(1000);
-  SerialUSB.println("1...");
+//  SerialUSB.println("9...");
+//  delay(1000);
+//  SerialUSB.println("8...");
+//  delay(1000);
+//  SerialUSB.println("7...");
+//  delay(1000);
+//  SerialUSB.println("6...");
+//  delay(1000);
+//  SerialUSB.println("5...");
+//  delay(1000);
+//  SerialUSB.println("4...");
+//  delay(1000);
+//  SerialUSB.println("3...");
+//  delay(1000);
+//  SerialUSB.println("2...");
+//  delay(1000);
+//  SerialUSB.println("1...");
   delay(1000);
   print_yw = true;
   delay(100);
-  r = 97.65;      /// choose step size as you like, 97.65 gives a nice plot since 97.65*1024 = 10,000
+  r = 100;      /// choose step size as you like, 97.65 gives a nice plot since 97.65*1024 = 10,000 . 
   delay(400);
   print_yw = false;
   r = 0;
