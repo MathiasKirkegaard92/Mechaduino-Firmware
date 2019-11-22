@@ -1,4 +1,4 @@
-//Contains the declaration of the state variables for the control loop  
+//Contains the declaration of the state variables for the control loop
 
 #ifndef __STATE_H__
 #define __STATE_H__

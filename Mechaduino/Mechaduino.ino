@@ -88,7 +88,6 @@ void receiveI2C(int howMany) {
     if (k > I2C_BUF_SIZE + CHECKSUMSIZE) break;
   }
   memcpy(&checksum_rx, rx_data + I2C_BUF_SIZE, 2);
-  // SerialUSB.print(calcsum(rx_data, I2C_BUF_SIZE)); SerialUSB.print(""); SerialUSB.println(checksum_rx);
 
   if (checksum_rx != calcsum(rx_data, I2C_BUF_SIZE)) { // error in recieved data
     // do something ?
@@ -108,12 +107,12 @@ void receiveI2C(int howMany) {
 
 void sendI2C() {
   // Angle
-  tmp = y;
+  tmp = y_1;
   angle_rounded = static_cast<int16_t> (tmp * 10 + 0.5);
   // angle_rounded = static_cast<int16_t> (read_angle() * 10 + 0.5);
   memcpy(tx_data, &angle_rounded, 2);
 
-  // wrapped angle
+  // wrapped angle_rounded
   tmp = yw - PA;
   angle_rounded = static_cast<int16_t>(tmp * 10 + 0.5);
   memcpy(tx_data + 2, &angle_rounded, 2); // uint
@@ -183,7 +182,6 @@ void loop()                 // main loop
 {
 
   serialCheck();              //must have this execute in loop for serial commands to function
-  // SerialUSB.println(read_angle());
   switch (mode) {
   case 't':
     r = torque;
