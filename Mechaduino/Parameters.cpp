@@ -22,7 +22,7 @@ volatile float pKd = 500;
 volatile float pLPF = 200;       //break frequency in hertz
 
 volatile float vKp = 0.3;       //velocity mode PID values.  Depending on your motor/load/desired performance, you will need to tune these values.  You can also implement your own control scheme
-volatile float vKi = 0.000; 
+volatile float vKi = 0.000;
 volatile float vKd = 0.05;
 volatile float vLPF = 50.0;       //break frequency in hertz
 
@@ -968,6 +968,13 @@ const float stepangle = aps / 32.0; // for step/dir interrupt: aps/32 is the equ
 
 volatile float PA = aps;            // Phase advance...aps = 1.8 for 200 steps per rev, 0.9 for 400
 
+// const float iMAX;
+// switch(MOTOR){
+//     case 17HS4401S:
+//     iMAX = 1.8;
+//     break;
+//     case:
+//   }
 const float iMAX = 1.8;             // Be careful adjusting this.  While the A4954 driver is rated for 2.0 Amp peak currents, it cannot handle these currents continuously.  Depending on how you operate the Mechaduino, you may be able to safely raise this value...please refer to the A4954 datasheet for more info
 const float rSense = 0.150;
 volatile int uMAX = (255 / 3.3) * (iMAX * 10 * rSense); // 255 for 8-bit pwm, 1023 for 10 bit, must also edit analogFastWrite

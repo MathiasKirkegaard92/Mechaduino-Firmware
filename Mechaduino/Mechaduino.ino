@@ -40,6 +40,15 @@
   ...see serialCheck() in Utils for more details
 
 */
+// VERSION
+// enum Motor_type{
+//  17HS16-2004S = 0;
+//  17HS4401S = 1;
+
+// }
+
+// const Motor_type MOTOR = 17HS4401S;
+
 #include "Utils.h"
 #include "Parameters.h"
 #include "State.h"
@@ -80,7 +89,7 @@ uint16_t calcsum(uint8_t buf[], int length) {
 }
 
 
-void receiveI2C(int howMany) {
+void receiveI2C(int how_many) {
   uint8_t k = 0;
   while (Wire.available()) {
     rx_data[k] = Wire.read();
