@@ -176,7 +176,7 @@ static void store_lookup(float lookupAngle)
 
 
 void calibrate() {   /// this is the calibration routine
-
+  disableTCInterrupts();
   int encoderReading = 0;     //or float?  not sure if we can average for more res?
   int currentencoderReading = 0;
   int lastencoderReading = 0;

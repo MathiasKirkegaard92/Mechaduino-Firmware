@@ -99,7 +99,6 @@ void receiveI2C(int how_many) {
   memcpy(&checksum_rx, rx_data + I2C_BUF_SIZE, 2);
 
   if (checksum_rx != calcsum(rx_data, I2C_BUF_SIZE)) { // error in recieved data
-    // do something ?
     err++;
   } else {
     memcpy(&torque, rx_data, 2); // int16
@@ -140,7 +139,7 @@ void sendI2C() {
 
 
 
-void setup()        // This code runs once at startup
+void setup()
 {
 
   digitalWrite(ledPin, HIGH);       // turn LED on
@@ -157,17 +156,12 @@ void setup()        // This code runs once at startup
   if (lookup[0] == 0 && lookup[128] == 0 && lookup[1024] == 0)
     SerialUSB.println("WARNING: Lookup table is empty! Run calibration");
 
-  // Uncomment the below lines as needed for your application.
-  // Leave commented for initial calibration and tuning.
-
-//      configureStepDir();           // Configures setpoint to be controlled by step/dir interface
-//      configureEnablePin();         // Active low, for use wath RAMPS 1.4 or similar
   enableTCInterrupts();         // uncomment this line to start in closed loop
-//      mode = 'x';                   // start in position mode
+
   mode = 't';                   // start in torque mode
 
 
-// I2C
+// // I2C
   Wire.begin(8);
   Wire.onReceive(receiveI2C);
   Wire.onRequest(sendI2C);
@@ -187,10 +181,12 @@ float fold360(float x) {
 //////////////////////////////////////
 
 
-void loop()                 // main loop
+void loop()
 {
 
-  serialCheck();              //must have this execute in loop for serial commands to function
+  // serialCheck();
+
+  // Set torque or velocity
   switch (mode) {
   case 't':
     r = torque;
@@ -199,81 +195,5 @@ void loop()                 // main loop
     if (abs(r - velocity) > 1) r = velocity;
     break;
   }
-
-  // float angleDiff = 180 - y;
-  // int sgn = sign(angleDiff);
-  // angleDiff *= sgn;
-
-////  Torque Detent
-//  if(angleDiff < angleThreshold){
-//    r = sgn*(-1)*(angleThreshold-angleDiff)*30;
-//  } else {
-//    r = 0;
-//  }
-
-//  Torque Snap
-
-//  if(angleDiff < angleThreshold){
-//    mode = 'x';
-//    r = 180;
-//    delay(500);
-//    mode = 't';
-//  } else {
-//    mode = 't';
-//    r = 0;
-//  }
-
-
-
-// Snap detents - postion controlled
-//if (u > torqueThreshold & abs(e) > detentAngle/2) { // Snap to grid/detent at half the angle
-//r -= detentAngle;
-//delay (50);
-//}
-//else if (u < - torqueThreshold & abs(e) > detentAngle/2){
-//r += detentAngle;
-//delay (50);
-//}
-
-
-
-  // if (round(y) != round(y_last)) {
-  //   if (mode == 'x') SerialUSB.println(y);
-  //   y_last = y;
-  // }
-
-  // // Max prints
-
-  // if (round(v) != round(v_last)) {
-  //   v_last = v;
-  //   if (mode == 'v') serialUSB.println(v);
-  // }
-
-
-// Torque curve
-  // time = micros();
-  // if ((time - time_last) > (1.0 / Fs * 1000000)) {
-  //   idx = round((fold360(y) * 10.0 * detents)) % 3600; // Angle to table idx
-  //   r = filter(sin_1[idx] / 1024.0 * 80);
-  //   time_last = time;
-  // }
-
-
-// Switching noise test
-  // time = micros();
-  // if ((time - time_last) > (1.0 / freq * 1000000)) {
-  //   r = state ? 115 : 0;
-  //   state = !state;
-  //   time_last = time;
-  // }
-
-  // if ((time - time_last_print) > 1000000) {
-  //   freq += 5;
-  //   SerialUSB.println(freq);
-  //   time_last_print = time;
-  // }
-
-
-  //r=0.1125*step_count;      //Don't use this anymore. Step interrupts enabled above by "configureStepDir()", adjust step I2C_BUF_size ("stepangle")in parameters.cpp
 
 }
