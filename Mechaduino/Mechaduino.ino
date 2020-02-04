@@ -167,15 +167,6 @@ void setup()
   Wire.onRequest(sendI2C);
 }
 
-int sign(float x) {
-  return (x < 0) ? -1 : (x > 0);
-}
-
-float fold360(float x) {
-  return x < 0 ? 360 - x : x;
-}
-
-
 //////////////////////////////////////
 /////////////////LOOP/////////////////
 //////////////////////////////////////
