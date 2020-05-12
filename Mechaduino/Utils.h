@@ -68,6 +68,8 @@ void moveRel(float pos_final, int vel_max, int accel);    // Generates trapezoid
 
 void moveAbs(float pos_final, int vel_max, int accel);    // Generates trapezoidal motion profile for closed loop position mode
 
+int fold(int in, int lo, int hi);
+
 #endif
 
 

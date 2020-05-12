@@ -53,7 +53,6 @@
 #include "Parameters.h"
 #include "State.h"
 #include "analogFastWrite.h"
-// #include "spiSlave.h"
 #include <Wire.h>
 #include <math.h>
 
@@ -62,8 +61,10 @@
 /////////////////SETUP////////////////
 //////////////////////////////////////
 
+// I2C communication
 const uint8_t I2C_BUF_SIZE = 10;
 const uint8_t CHECKSUMSIZE = 2;
+const uint8_t DATALENGTH = 2;
 
 uint8_t rx_data[I2C_BUF_SIZE];
 uint8_t tx_data[I2C_BUF_SIZE];
@@ -71,14 +72,19 @@ uint8_t tx_data[I2C_BUF_SIZE];
 uint16_t checksum_tx = 0;
 uint16_t checksum_rx = 0;
 uint16_t sum = 0;
+int32_t err = 0;
 
+long last = 0;
+
+// State variables
 float tmp;
 int16_t angle_rounded = 0;
 char mode_rec = 't';
 float velocity = 0;
 int16_t torque = 0;
-int32_t err = 0;
 
+
+float motor_inertia = 10.0;
 
 uint16_t calcsum(uint8_t buf[], int length) {
   uint32_t val = 0;
@@ -94,23 +100,10 @@ void receiveI2C(int how_many) {
   while (Wire.available()) {
     rx_data[k] = Wire.read();
     k++;
-    if (k > I2C_BUF_SIZE + CHECKSUMSIZE) break;
+    if (k > DATALENGTH) break;
   }
-  memcpy(&checksum_rx, rx_data + I2C_BUF_SIZE, 2);
-
-  if (checksum_rx != calcsum(rx_data, I2C_BUF_SIZE)) { // error in recieved data
-    err++;
-  } else {
-    memcpy(&torque, rx_data, 2); // int16
-    memcpy(&velocity, rx_data + 2, 4); // float
-    memcpy(&mode_rec, rx_data + 6, 1); // char
-    if (mode_rec == 't' || mode_rec == 'x' || mode_rec == 'v') {
-      mode = mode_rec;
-    };
-  }
-
+  memcpy(&torque, rx_data, 2); // int16
 }
-
 
 
 void sendI2C() {
@@ -120,23 +113,20 @@ void sendI2C() {
   // angle_rounded = static_cast<int16_t> (read_angle() * 10 + 0.5);
   memcpy(tx_data, &angle_rounded, 2);
 
-  // wrapped angle_rounded
-  tmp = yw - PA;
-  angle_rounded = static_cast<int16_t>(tmp * 10 + 0.5);
-  memcpy(tx_data + 2, &angle_rounded, 2); // uint
-
-  // Velocity
-  tmp = v;
-  memcpy(tx_data + 4, &tmp, 4); // float
-
-  // Checksum
-  checksum_tx = calcsum(tx_data, I2C_BUF_SIZE);
-  memcpy(tx_data + I2C_BUF_SIZE, &checksum_tx, 2); // uint16
-
   // Send tx_data to I2C master
-  Wire.write(tx_data, I2C_BUF_SIZE + CHECKSUMSIZE);
+  Wire.write(tx_data, DATALENGTH);
 }
 
+int torqueToCurrent(int torque) {
+  //  Offset with motoor inertia
+  if (torque < 0) {
+    return  torque - motor_inertia;
+  } else if (torque > 0) {
+    return torque + motor_inertia;
+  } else {
+    return 0;
+  }
+}
 
 
 void setup()
@@ -159,9 +149,9 @@ void setup()
   enableTCInterrupts();         // uncomment this line to start in closed loop
 
   mode = 't';                   // start in torque mode
+  torque = 1;
 
-
-// // I2C
+// I2C
   Wire.begin(8);
   Wire.onReceive(receiveI2C);
   Wire.onRequest(sendI2C);
@@ -174,17 +164,16 @@ void setup()
 
 void loop()
 {
+  long now = millis();
+  serialCheck();
+  r = torqueToCurrent(torque);
 
-  // serialCheck();
-
-  // Set torque or velocity
-  switch (mode) {
-  case 't':
-    r = torque;
-    break;
-  case 'v':
-    if (abs(r - velocity) > 1) r = velocity;
-    break;
-  }
+  // Motor inertia test
+  // if (now - last > 500) {
+  //   motor_inertia += 0.1;
+  //   SerialUSB.print("Motor Inertia: ");
+  //   SerialUSB.println(motor_inertia);
+  //   last = now;
+  // }
 
 }

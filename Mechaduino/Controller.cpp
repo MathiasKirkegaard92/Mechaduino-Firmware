@@ -1,4 +1,4 @@
-//Contains TC5 Controller definition
+  //Contains TC5 Controller definition
 //The main control loop is executed by the TC5 timer interrupt:
 
 #include <SPI.h>
@@ -6,6 +6,16 @@
 #include "State.h"
 #include "Utils.h"
 #include "Parameters.h"
+
+int clip(int in, int lo, int hi) {
+  if (in > hi) {
+    return hi;
+  } else if (in < lo) {
+    return lo;
+  } else {
+    return in;
+  }
+}
 
 
 void TC5_Handler() {                // gets called with FPID frequency
@@ -23,69 +33,79 @@ void TC5_Handler() {                // gets called with FPID frequency
 
     yw = (y + (360.0 * wrap_count));              //yw is the wrapped angle (can exceed one revolution)
 
-    if (mode == 'h') {                            //choose control algorithm based on mode
-      hybridControl();                            // hybrid control is still under development...
+
+    v = vLPFa * v +  vLPFb * (yw - yw_1);  //filtered velocity called "DTerm" because it is similar to derivative action in position loop
+
+    switch (mode) {
+    case 'h':
+      e = (r - v);   //error in degrees per rpm (sample frequency in Hz * (60 seconds/min) / (360 degrees/rev) )
+
+      ITerm += (vKi * e);                 //Integral wind up limit
+      if (ITerm > 200) ITerm = 200;
+      else if (ITerm < -200) ITerm = -200;
+
+      u = ((vKp * e) + ITerm - (vKd * (e - e_1)));
+      u *= max_torque;
+      // u = clip(u, -max_torque, max_torque);
+      // SerialUSB.println(e);
+      break;
+
+
+    case 'x':         // position control
+      e = (r - yw);
+
+      ITerm += (pKi * e);                             //Integral wind up limit
+      if (ITerm > 150.0) ITerm = 150.0;
+      else if (ITerm < -150.0) ITerm = -150.0;
+
+      DTerm = pLPFa * DTerm -  pLPFb * pKd * (yw - yw_1);
+
+      u = (pKp * e) + ITerm + DTerm;
+
+      break;
+
+    case 'v':         // velocity controlr
+      e = (r - v);   //error in degrees per rpm (sample frequency in Hz * (60 seconds/min) / (360 degrees/rev) )
+
+      ITerm += (vKi * e);                 //Integral wind up limit
+      if (ITerm > 200) ITerm = 200;
+      else if (ITerm < -200) ITerm = -200;
+
+      u = ((vKp * e) + ITerm - (vKd * (e - e_1)));
+
+      break;
+
+    case 't':         // torque control
+      u = 1.0 * r ;
+      break;
+    default:
+      u = 0;
+      break;
     }
-    else {
-      v = vLPFa * v +  vLPFb * (yw - yw_1); //filtered velocity called "DTerm" because it is similar to derivative action in position loop
-      switch (mode) {
-      case 'x':         // position control
-        e = (r - yw);
 
-        ITerm += (pKi * e);                             //Integral wind up limit
-        if (ITerm > 150.0) ITerm = 150.0;
-        else if (ITerm < -150.0) ITerm = -150.0;
-
-        DTerm = pLPFa * DTerm -  pLPFb * pKd * (yw - yw_1);
-
-        u = (pKp * e) + ITerm + DTerm;
-
-        break;
-
-      case 'v':         // velocity controlr
-        e = (r - v);   //error in degrees per rpm (sample frequency in Hz * (60 seconds/min) / (360 degrees/rev) )
-
-        ITerm += (vKi * e);                 //Integral wind up limit
-        if (ITerm > 200) ITerm = 200;
-        else if (ITerm < -200) ITerm = -200;
-
-        u = ((vKp * e) + ITerm - (vKd * (e - e_1)));
-
-        //SerialUSB.println(e);
-        break;
-
-      case 't':         // torque control
-        u = 1.0 * r ;
-        break;
-      default:
-        u = 0;
-        break;
-      }
-
-      y_1 = y;  //copy current value of y to previous value (y_1) for next control cycle before PA angle added
+    y_1 = y;  //copy current value of y to previous value (y_1) for next control cycle before PA angle added
 
 
-      if (u > 0)          //Depending on direction we want to apply torque, add or subtract a phase angle of PA for max effective torque.  PA should be equal to one full step angle: if the excitation angle is the same as the current position, we would not move!
-      { //You can experiment with "Phase Advance" by increasing PA when operating at high speeds
-        y += PA;          //update phase excitation angle
-        if (u > uMAX)     // limit control effort
-          u = uMAX;       //saturation limits max current command
-      }
-      else
-      {
-        y -= PA;          //update phase excitation angle
-        if (u < -uMAX)    // limit control effort
-          u = -uMAX;      //saturation limits max current command
-      }
-
-      U = abs(u);       //
-
-      if (abs(e) < 0.1) ledPin_HIGH();    // turn on LED if error is less than 0.1
-      else ledPin_LOW();                  //digitalWrite(ledPin, LOW);
-
-
-      output(-y, round(U));    // update phase currents
+    if (u > 0)          //Depending on direction we want to apply torque, add or subtract a phase angle of PA for max effective torque.  PA should be equal to one full step angle: if the excitation angle is the same as the current position, we would not move!
+    { //You can experiment with "Phase Advance" by increasing PA when operating at high speeds
+      y += PA;          //update phase excitation angle
+      if (u > uMAX)     // limit control effort
+        u = uMAX;       //saturation limits max current command
     }
+    else
+    {
+      y -= PA;          //update phase excitation angle
+      if (u < -uMAX)    // limit control effort
+        u = -uMAX;      //saturation limits max current command
+    }
+
+    U = abs(u);       //
+
+    if (abs(e) < 0.1) ledPin_HIGH();    // turn on LED if error is less than 0.1
+    else ledPin_LOW();                  //digitalWrite(ledPin, LOW);
+
+
+    output(-y, round(U));    // update phase currents
 
     // e_3 = e_2;    //copy current values to previous values for next control cycle
     e_2 = e_1;    //these past values can be useful for more complex controllers/filters.  Uncomment as necessary
@@ -96,10 +116,16 @@ void TC5_Handler() {                // gets called with FPID frequency
     yw_1 = yw;
     //y_1 = y;
 
-    if (print_yw ==  true) {      //for step resonse... still under development
+    if (print_yw ==  true) {      //for position step resonse... still under development
       print_counter += 1;
-      if (print_counter >= 5) {   // print position every 5th loop (every time is too much data for plotter and may slow down control loop
+      if (print_counter >= 20) {   // print position every 5th loop (every time is too much data for plotter and may slow down control loop
         SerialUSB.println(int(yw * 1024));  //*1024 allows us to print ints instead of floats... may be faster
+        print_counter = 0;
+      }
+    } else if (print_v ==  true) {      //fo velocity step resonse...
+      print_counter += 1;
+      if (print_counter >= 20) {
+        SerialUSB.println(v);
         print_counter = 0;
       }
     }
@@ -110,11 +136,3 @@ void TC5_Handler() {                // gets called with FPID frequency
 
 
 }
-
-
-
-
-
-
-
-

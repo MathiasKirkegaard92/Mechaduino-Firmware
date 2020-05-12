@@ -373,6 +373,7 @@ void calibrate() {   /// this is the calibration routine
   SerialUSB.println("The calibration table has been written to non-volatile Flash memory!");
   SerialUSB.println(" ");
   SerialUSB.println(" ");
+  enableTCInterrupts();
 }
 
 
@@ -434,7 +435,8 @@ void serialCheck() {        //Monitors serial for commands.  Must be called in r
       break;
 
     case 'y':
-      r = (read_angle() + (360.0 * wrap_count));        // hold the current position
+      if (mode == 'x') r = (read_angle() + (360.0 * wrap_count));       // hold the current position
+      else if (mode == 'v') r = v;
       SerialUSB.print("New setpoint ");
       SerialUSB.println(r, 2);
       enableTCInterrupts();      //enable closed loop
@@ -1101,36 +1103,27 @@ void stepResponse() {     // not done yet...
 //  SerialUSB.println("Close Serial Monitor and open Tools>>Serial Plotter");
 //  SerialUSB.println("You have 10 seconds...");
   enableTCInterrupts();     //start in closed loop mode
-  //mode = 'x';
   r = 0;
   delay(1000);
-//  SerialUSB.println("9...");
-//  delay(1000);
-//  SerialUSB.println("8...");
-//  delay(1000);
-//  SerialUSB.println("7...");
-//  delay(1000);
-//  SerialUSB.println("6...");
-//  delay(1000);
-//  SerialUSB.println("5...");
-//  delay(1000);
-//  SerialUSB.println("4...");
-//  delay(1000);
-//  SerialUSB.println("3...");
-//  delay(1000);
-//  SerialUSB.println("2...");
-//  delay(1000);
-//  SerialUSB.println("1...");
+  SerialUSB.println("5...");
   delay(1000);
-  print_yw = true;
-  delay(100);
+  SerialUSB.println("4...");
+  delay(1000);
+  SerialUSB.println("3...");
+  delay(1000);
+  SerialUSB.println("2...");
+  delay(1000);
+  SerialUSB.println("1...");
+  if (mode == 'x') print_yw = true;
+  else if (mode == 'v') print_v = true;
+  delay(1000);
   r = 100;      /// choose step size as you like, 97.65 gives a nice plot since 97.65*1024 = 10,000 .
-  delay(400);
-  print_yw = false;
+  delay(1000);
+  if (mode == 'x') print_yw = false;
+  else if (mode == 'v') print_v = false;
   r = 0;
   delay(500);
   disableTCInterrupts();
-
 }
 
 
@@ -1309,4 +1302,13 @@ void moveAbs(float pos_final, int vel_max, int accel) {
   r = pos_final;
   //SerialUSB.print(micros()-start);
 
+}
+
+int fold(int in, int lo, int hi) {
+  int b = hi - lo;
+  int b2 = b + b;
+  int c = mod(in - lo, b2);
+  if (c > b)
+    c = b2 - c;
+  return c + lo;
 }

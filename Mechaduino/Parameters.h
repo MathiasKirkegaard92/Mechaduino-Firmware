@@ -41,6 +41,7 @@ extern volatile float PA;  //
 extern const float iMAX;
 extern const float rSense;
 extern volatile int uMAX;
+extern float max_torque;
 
 
 extern const int sin_1[];

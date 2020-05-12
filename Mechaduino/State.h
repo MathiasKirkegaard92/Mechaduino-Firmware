@@ -38,6 +38,8 @@ extern char mode;
 extern int dir;
 
 extern bool print_yw;     //for step response, under development...
+extern bool print_v;     //for step response, under development...
+
 #endif
 
 
