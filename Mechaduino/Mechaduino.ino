@@ -82,6 +82,7 @@ int16_t angle_rounded = 0;
 char mode_rec = 't';
 float velocity = 0;
 int16_t torque = 0;
+  long now = 0;
 
 
 float motor_inertia = 10.0;
@@ -103,6 +104,7 @@ void receiveI2C(int how_many) {
     if (k > DATALENGTH) break;
   }
   memcpy(&torque, rx_data, 2); // int16
+//  SerialUSB.println(torque);
 }
 
 
@@ -166,7 +168,15 @@ void loop()
 {
   long now = millis();
   serialCheck();
-  r = torqueToCurrent(torque);
+//  r = torqueToCurrent(torque);
+r = torque;
+//  r = sin_1[(int)(y*10)]/4;
+//   if (now - last > 100) {
+//     SerialUSB.print("Torque: ");
+//     SerialUSB.println(r);
+//     last = now;
+//   }
+
 
   // Motor inertia test
   // if (now - last > 500) {

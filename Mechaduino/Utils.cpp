@@ -505,6 +505,7 @@ void serialCheck() {        //Monitors serial for commands.  Must be called in r
 
 
 void parameterQuery() {         //print current parameters in a format that can be copied directly in to Parameters.cpp
+  disableTCInterrupts();
   SerialUSB.println(' ');
   SerialUSB.println("----Current Parameters-----");
   SerialUSB.println(' ');
