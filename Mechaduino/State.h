@@ -26,7 +26,8 @@ extern volatile float e_3;
 extern volatile long counter;
 
 extern volatile long wrap_count;
-extern volatile float y_1;
+extern volatile float ybuf[4];
+extern volatile int itr_count;
 
 extern volatile long step_count;  //For step/dir interrupt
 extern int stepNumber; // step index for cal routine
@@ -41,11 +42,3 @@ extern bool print_yw;     //for step response, under development...
 extern bool print_v;     //for step response, under development...
 
 #endif
-
-
-
-
-
-
-
-
