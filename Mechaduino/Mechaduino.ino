@@ -40,22 +40,16 @@
   ...see serialCheck() in Utils for more details
 
 */
-// VERSION
-// enum Motor_type{
-//  17HS16-2004S = 0;
-//  17HS4401S = 1;
-
-// }
-
-// const Motor_type MOTOR = 17HS4401S;
 
 #include <Wire.h>
 #include <math.h>
 
+#include "Controller.h"
 #include "Parameters.h"
 #include "State.h"
 #include "Utils.h"
 #include "analogFastWrite.h"
+#include "tests.h"
 
 //////////////////////////////////////
 /////////////////SETUP////////////////
@@ -75,18 +69,18 @@ uint16_t checksum_tx = 0;
 uint16_t checksum_rx = 0;
 uint16_t sum         = 0;
 int32_t  err         = 0;
+uint16_t debug_val   = 1000;
 
 long last = 0;
 
 // State variables
-float   tmp;
+float   tmp_v            = 0;
+float   tmp_y            = 0;
 int16_t angle_rounded    = 0;
 char    mode_rec         = 't';
 int16_t velocity_rounded = 0;
 int16_t torque           = 0;
 long    now              = 0;
-
-float motor_inertia = 10.0;
 
 uint16_t calcsum(uint8_t buf[], int length) {
     uint32_t val = 0;
@@ -97,6 +91,10 @@ uint16_t calcsum(uint8_t buf[], int length) {
 }
 
 void receiveI2C(int how_many) {
+    if (!Wire.available()) {
+        return;
+    }
+
     uint8_t k = 0;
     while (Wire.available()) {
         rx_data[k] = Wire.read();
@@ -104,76 +102,119 @@ void receiveI2C(int how_many) {
         if (k > RX_DATALENGTH * 2) break;
     }
     memcpy(&torque, rx_data, RX_DATALENGTH * 2);  // int16
-    //  SerialUSB.println(torque);
+#if SAMPLE_ON_REQUEST
+    r = torque;
+    updateMotorCurrent();
+    TEST1_LOW();
+#else
+    r = torque;
+#endif
+#if LATENCY_DEBUG
+    if (r == debug_val) {
+        TEST1_LOW();
+        debug_val++;
+        if (debug_val > 3600) {
+            debug_val = 0;
+        }
+    }
+#endif
 }
 
 void sendI2C() {
-    int16_t N      = itr_count;
-    itr_count      = 0;
+    TEST1_HIGH();
+#if SAMPLE_ON_REQUEST
+    updateAngle();
+    itr_count++;
+    updateVelocity();
+#endif
+#if USE_FIXED_POINT
+    v = fixed_to_float(v_fixed);
+#endif
+    tmp_v = v;
+    tmp_y = ybuf[0];
+
     int16_t offset = 0;
 
-    // Position samples
+// Position samples
+#if BUFFER_ANGLE_READINGS
+    int16_t N = itr_count;
+    itr_count = 0;
     if (N > TX_POS_SAMPLES) {
-        //    SerialUSB.print("Overflow in angle buffer");
-        //    SerialUSB.println(N);
         N = TX_POS_SAMPLES;
     }
-    //   memcpy(tx_data, &N, 2);
-    //  offset += 2;
+    memcpy(tx_data, &N, 2);
+    offset += 2;
 
     for (int i = 0; i < N; i++) {
-        tmp           = ybuf[N - i - 1];
-        angle_rounded = static_cast<int16_t>(tmp * 10 + 0.5);
+        tmp_y         = ybuf[N - i - 1];
+        angle_rounded = int16_t(tmp * 10 + 0.5);
         memcpy(tx_data + offset, &angle_rounded, 2);
         offset += 2;
     }
+#elif LATENCY_DEBUG
+    memcpy(tx_data + offset, &debug_val, 2);
+    offset += 2;
+#else
+    angle_rounded = uint16_t(tmp_y * 10 + 0.5);
+    memcpy(tx_data + offset, &angle_rounded, 2);
+    offset += 2;
+#endif
 
     // Velocity sample
-    tmp              = v;
-    velocity_rounded = static_cast<int16_t>(tmp * 10 + 0.5);
+    velocity_rounded = (int16_t)(tmp_v * 10 + 0.5);
     memcpy(tx_data + offset, &velocity_rounded, 2);
 
     // Send tx_data to I2C master
-    //  Wire.write(tx_data, TX_DATALENGTH*2 + 2);
     Wire.write(tx_data, TX_DATALENGTH * 2);
 }
 
-int torqueToCurrent(int torque) {
-    //  Offset with motoor inertia
-    if (torque < 0) {
-        return torque - motor_inertia;
-    } else if (torque > 0) {
-        return torque + motor_inertia;
-    } else {
-        return 0;
-    }
-}
-
 void setup() {
+    SerialUSB.begin(115200);
     digitalWrite(ledPin, HIGH);  // turn LED on
     setupPins();                 // configure pins
     setupTCInterrupts();         // configure controller interrupt
 
-    SerialUSB.begin(115200);
     delay(3000);   // This delay seems to make it easier to establish a connection when the Mechaduino is configured to
                    // start in closed loop mode.
-    serialMenu();  // Prints menu to serial monitor
+    serialMenu();  // Prints men    to serial monitor
     setupSPI();    // Sets up SPI for communicating with encoder
     digitalWrite(ledPin, LOW);  // turn LED off
 
     // spot check some of the lookup table to decide if it has been filled in
     if (lookup[0] == 0 && lookup[128] == 0 && lookup[1024] == 0)
         SerialUSB.println("WARNING: Lookup table is empty! Run calibration");
-
-    enableTCInterrupts();  // uncomment this line to start in closed loop
+#if !SAMPLE_ON_REQUEST
+    enableTCInterrupts();
+#endif
 
     mode   = 't';  // start in torque mode
     torque = 1;
 
     // I2C
+#if ANTI_COGG_CAL
+    cal_cogg();
+#else
     Wire.begin(0);
     Wire.onReceive(receiveI2C);
     Wire.onRequest(sendI2C);
+#endif
+
+    // Tests
+
+    // move_to_zero();
+    // calibrate();
+
+    // pos_resolution_tests(1);  // Fullstep
+    // pos_resolution_tests(2);  // Halfstep
+    // pos_resolution_tests(4);  // 1/4 step
+    // pos_resolution_tests(8);  // 1/8 step
+    // pos_resolution_tests(16); // 1/16 step
+    // pos_resolution_tests(32); // 1/32 step
+
+    // dead_zone_test();
+    // saturation_test();
+    // torque_test(-0, -uMAX, -5);
+    // torque_test(-uMAX,0,5);
 }
 
 //////////////////////////////////////
@@ -183,20 +224,14 @@ void setup() {
 void loop() {
     long now = millis();
     serialCheck();
-    //  r = torqueToCurrent(torque);
-    r = torque;
-    //  r = sin_1[(int)(y*10)]/4;
-    //   if (now - last > 100) {
-    //     SerialUSB.print("Torque: ");
-    //     SerialUSB.println(r);
-    //     last = now;
-    //   }
 
-    // Motor inertia test
-    // if (now - last > 500) {
-    //   motor_inertia += 0.1;
-    //   SerialUSB.print("Motor Inertia: ");
-    //   SerialUSB.println(motor_inertia);
-    //   last = now;
-    // }
+#if !SAMPLE_ON_REQUEST && CALC_VELOCITY_ASYNC
+    updateVelocity();
+#endif
+
+    if (now - last > 100) {
+        // velocity_test();
+        // SerialUSB.println((int)(ybuf[0] * 10));
+        last = now;
+    }
 }

@@ -1,80 +1,88 @@
-//Contains the declarations for the functions used by the firmware
+// Contains the declarations for the functions used by the firmware
+#include "stdint.h"
+#include "Parameters.h"
 
 #ifndef __UTILS_H__
 #define __UTIL_H__
 
 
-void setupPins();                 // initializes pins
+void setupPins();  // initializes pins
 
-void setupSPI();                  //initializes SPI
+void setupSPI();  // initializes SPI
 
-void configureStepDir();          //configure step/dir interface
+void configureStepDir();  // configure step/dir interface
 
-void configureEnablePin();        //configure enable pin
+void configureEnablePin();  // configure enable pin
 
-void stepInterrupt();             //step interrupt handler
+void stepInterrupt();  // step interrupt handler
 
-void dirInterrupt();              //dir interrupt handler
+void dirInterrupt();  // dir interrupt handler
 
-void enableInterrupt();           //enable pin interrupt handler
+void enableInterrupt();  // enable pin interrupt handler
 
-void output(float theta, int effort);	  //calculates phase currents (commutation) and outputs to Vref pins
+void output(float theta, int effort);  // calculates phase currents (commutation) and outputs to Vref pins
 
-void calibrate();	                //calibration routine
+void calibrate();  // calibration routine
 
-void serialCheck();               //checks serial port for commands.  Must include this in loop() for serial interface to work
+void serialCheck();  // checks serial port for commands.  Must include this in loop() for serial interface to work
 
-void parameterQuery();            //Prints current parameters
+void parameterQuery();  // Prints current parameters
 
-void oneStep(void);               //take one step
+void oneStep(void);  // take one step
 
-int readEncoder();                //read raw encoder position
+int readEncoder();  // read raw encoder position
 
-float read_angle();				  // Average 20 encoder readings
+float read_angle();  // Average 20 encoder readings
 
-void readEncoderDiagnostics();    //check encoder diagnostics registers
+void readEncoderDiagnostics();  // check encoder diagnostics registers
 
-void print_angle();               //for debigging purposes in open loop mode:  prints [step number] , [encoder reading]
+void print_angle();  // for debigging purposes in open loop mode:  prints [step number] , [encoder reading]
 
-void receiveEvent(int howMany);   //for i2c interface...
+void receiveEvent(int howMany);  // for i2c interface...
 
-int mod(int xMod, int mMod);      //modulo, handles negative values properly
+int mod(int xMod, int mMod);  // modulo, handles negative values properly
 
-void setupTCInterrupts();         //configures control loop interrupt
+void setupTCInterrupts();  // configures control loop interrupt
 
-void enableTCInterrupts();        //enables control loop interrupt.  Use this to enable "closed-loop" modes
+void enableTCInterrupts();  // enables control loop interrupt.  Use this to enable "closed-loop" modes
 
-void disableTCInterrupts();       //disables control loop interrupt.  Use this to diable "closed-loop" mode
+void disableTCInterrupts();  // disables control loop interrupt.  Use this to diable "closed-loop" mode
 
-void antiCoggingCal();            //under development...
+void enableExternalTCInterrupts(bool enable);
 
-void parameterEditmain();         //parameter editing menu
+void antiCoggingCal();  // under development...
 
-void parameterEditp();            //parameter editing menu
+void parameterEditmain();  // parameter editing menu
 
-void parameterEditv();            //parameter editing menu
+void parameterEditp();  // parameter editing menu
 
-void parameterEdito();            //parameter editing menu
+void parameterEditv();  // parameter editing menu
 
-void hybridControl();             //open loop stepping, but corrects for missed steps.  under development
+void parameterEdito();  // parameter editing menu
 
-void serialMenu();                //main menu
+void hybridControl();  // open loop stepping, but corrects for missed steps.  under development
 
-void sineGen();                   //generates sinusoidal commutation table. you can experiment with other commutation profiles
+void serialMenu();  // main menu
 
-void stepResponse();              //generates position mode step response in Serial Plotter
+void sineGen();  // generates sinusoidal commutation table. you can experiment with other commutation profiles
 
-void moveRel(float pos_final, int vel_max, int accel);    // Generates trapezoidal motion profile for closed loop position mode
+void stepResponse();  // generates position mode step response in Serial Plotter
 
-void moveAbs(float pos_final, int vel_max, int accel);    // Generates trapezoidal motion profile for closed loop position mode
+void moveRel(float pos_final, int vel_max,
+             int accel);  // Generates trapezoidal motion profile for closed loop position mode
+
+void moveAbs(float pos_final, int vel_max,
+             int accel);  // Generates trapezoidal motion profile for closed loop position mode
+
+void move_to_zero();
 
 int fold(int in, int lo, int hi);
 
+double fixed_to_float(fixed_point_t input); 
+
+fixed_point_t float_to_fixed(double input); 
+
+fixed_point_t fixed_mult(fixed_point_t a, fixed_point_t b);
+
+
 #endif
-
-
-
-
-
-
-

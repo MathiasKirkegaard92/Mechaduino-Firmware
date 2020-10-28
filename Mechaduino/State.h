@@ -3,8 +3,9 @@
 #ifndef __STATE_H__
 #define __STATE_H__
 
+#include "Parameters.h"
 
-//interrupt vars
+extern const int BUFLENGTH;
 
 extern volatile int U;  //control effort (abs)
 extern volatile float r;  //setpoint
@@ -26,8 +27,14 @@ extern volatile float e_3;
 extern volatile long counter;
 
 extern volatile long wrap_count;
-extern volatile float ybuf[4];
+extern volatile float ybuf[];
 extern volatile int itr_count;
+
+// Fixed point variables
+extern volatile fixed_point_t ybuf_fixed[];
+extern volatile fixed_point_t v_fixed; 
+extern volatile fixed_point_t yw_fixed;
+extern volatile fixed_point_t yw_1_fixed;
 
 extern volatile long step_count;  //For step/dir interrupt
 extern int stepNumber; // step index for cal routine
